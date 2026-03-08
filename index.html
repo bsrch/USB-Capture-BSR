@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>USB Capture Pro</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="controls">
+
+<select id="deviceSelect"></select>
+
+<select id="resolutionSelect">
+<option value="640x480">640x480</option>
+<option value="1280x720">720p</option>
+<option value="1920x1080">1080p</option>
+<option value="2560x1440">1440p</option>
+</select>
+
+<select id="fpsSelect">
+<option value="30">30 FPS</option>
+<option value="60">60 FPS</option>
+</select>
+
+<select id="aspectSelect">
+<option value="contain">Original</option>
+<option value="cover">Fill</option>
+<option value="fill">Stretch</option>
+</select>
+
+<button id="startBtn">Start</button>
+<button id="mirrorBtn">Mirror</button>
+<button id="zoomReset">Reset Zoom</button>
+<button id="screenshotBtn">Screenshot</button>
+<button id="pipBtn">PiP</button>
+<button id="fullscreenBtn">Fullscreen</button>
+
+<span id="fpsCounter"></span>
+
+</div>
+
+<div id="viewer">
+
+<video id="video" autoplay playsinline></video>
+
+<div id="topOverlay">
+<button id="exitFullscreen">Exit Fullscreen</button>
+</div>
+
+</div>
+
+<canvas id="captureCanvas"></canvas>
+
+<script src="app.js"></script>
+
+</body>
+</html>
