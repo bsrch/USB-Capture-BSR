@@ -1,51 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>USB Capture Viewer</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>USB Capture — Perfect Fit Viewer</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div id="app">
+    <header id="controls">
+      <div class="row">
+        <label for="deviceSelect">Video device</label>
+        <select id="deviceSelect" aria-label="Video device"></select>
+      </div>
 
-<div id="controls">
+      <div class="row">
+        <label for="resolutionSelect">Resolution</label>
+        <select id="resolutionSelect" aria-label="Resolution">
+          <option value="640x480">640 × 480</option>
+          <option value="1280x720">1280 × 720</option>
+          <option value="1600x900" selected>1600 × 900</option>
+          <option value="1920x1080">1920 × 1080</option>
+        </select>
+      </div>
 
-<select id="deviceSelect"></select>
+      <div class="row">
+        <label for="fpsSelect">FPS</label>
+        <select id="fpsSelect" aria-label="Frames per second">
+          <option value="30" selected>30 FPS</option>
+          <option value="60">60 FPS</option>
+        </select>
+      </div>
 
-<select id="resolutionSelect">
-<option value="640x480">640x480</option>
-<option value="1280x720">1280x720</option>
-<option value="1600x900">1600x900</option>
-<option value="1920x1080">1920x1080</option>
-</select>
+      <div class="row">
+        <label for="displayMode">Display mode</label>
+        <select id="displayMode" aria-label="Display mode">
+          <option value="smart" selected>Smart (auto)</option>
+          <option value="fill">Fill (cover, crop)</option>
+          <option value="fit">Fit (contain, bars possible)</option>
+          <option value="stretch">Stretch (distort)</option>
+          <option value="original">Original (native size)</option>
+        </select>
+      </div>
 
-<select id="fpsSelect">
-<option value="30">30 FPS</option>
-<option value="60">60 FPS</option>
-</select>
+      <div class="row actions">
+        <button id="startBtn">Start</button>
+        <button id="fullscreenBtn" title="F">Fullscreen</button>
+        <button id="mirrorBtn" title="M">Mirror</button>
+        <button id="pipBtn" title="P">PiP</button>
+        <button id="screenshotBtn" title="S">Screenshot</button>
+        <button id="resetViewBtn" title="R">Reset</button>
+      </div>
 
-<button id="startBtn">Start</button>
-<button id="fullscreenBtn">Fullscreen</button>
-<button id="mirrorBtn">Mirror</button>
-<button id="screenshotBtn">Screenshot</button>
+      <div class="row status" id="status" aria-live="polite"></div>
+    </header>
 
-</div>
+    <main id="viewer">
+      <video id="video" autoplay playsinline muted></video>
+      <div id="topBar"><button id="exitFullscreen">Exit</button></div>
+    </main>
 
-<div id="viewer">
+    <canvas id="captureCanvas" style="display:none"></canvas>
+  </div>
 
-<video id="video" autoplay playsinline></video>
-
-<div id="topBar">
-<button id="exitFullscreen">Exit Fullscreen</button>
-</div>
-
-</div>
-
-<canvas id="captureCanvas"></canvas>
-
-<script src="app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>

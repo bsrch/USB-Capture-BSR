@@ -1,67 +1,103 @@
-body{
-margin:0;
-background:#111;
-font-family:Arial;
-color:white;
+/* Basic reset and layout */
+* { box-sizing: border-box; }
+html,body,#app { height:100%; margin:0; background:#0b0b0b; color:#fff; font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial; }
+
+/* Controls bar */
+#controls {
+  display:flex;
+  gap:10px;
+  padding:12px;
+  align-items:center;
+  background:linear-gradient(#131313,#0f0f0f);
+  flex-wrap:wrap;
+  border-bottom:1px solid rgba(255,255,255,0.03);
 }
 
-#controls{
-display:flex;
-gap:10px;
-padding:12px;
-background:#222;
-flex-wrap:wrap;
-align-items:center;
+/* Each labeled control */
+.row {
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:180px;
 }
 
-select{
-font-size:16px;
-padding:6px 8px;
-min-width:220px;
+.row label { font-size:12px; color:#bbb; }
+
+/* Make selects large and readable */
+select {
+  font-size:15px;
+  padding:8px 10px;
+  border-radius:8px;
+  background:#141414;
+  color:#fff;
+  border:1px solid rgba(255,255,255,0.04);
+  min-width:220px; /* ensures dropdown large enough */
 }
 
-button{
-font-size:15px;
-padding:6px 10px;
-background:#444;
-color:white;
-border:none;
-cursor:pointer;
+/* Action buttons */
+.actions { flex-direction:row; align-items:center; gap:8px; min-width:300px; }
+button {
+  font-size:14px;
+  padding:8px 10px;
+  border-radius:8px;
+  border:none;
+  background:#222;
+  color:#fff;
+  cursor:pointer;
+}
+button:hover { background:#333; }
+
+/* status text */
+.status { color:#bfc7cf; font-size:13px; min-width:220px; }
+
+/* Viewer / video container */
+#viewer {
+  position:relative;
+  width:100%;
+  height:calc(100vh - 84px); /* controls height approx 84px; adjust if necessary */
+  overflow:hidden;
+  background:#000;
 }
 
-button:hover{
-background:#666;
+/* video absolutely positioned and sized by JS for precise behavior */
+#video {
+  position:absolute;
+  top:0;
+  left:0;
+  background:#000;
+  transform-origin:center center;
+  -webkit-user-select:none;
+  user-select:none;
+  touch-action:none;
 }
 
-#viewer{
-position:relative;
-width:100%;
-height:calc(100vh - 60px);
-overflow:hidden;
-background:black;
+/* top bar appears on hover or pointer near top */
+#topBar {
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:44px;
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  padding:6px 10px;
+  background:linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.0));
+  opacity:0;
+  transition:opacity .18s ease;
+  pointer-events:none;
 }
-
-video{
-position:absolute;
-top:0;
-left:0;
+#viewer:hover #topBar, #viewer.touchingTop #topBar {
+  opacity:1;
+  pointer-events:auto;
 }
+#topBar button { border:none; background:#222; color:#fff; padding:7px 12px; border-radius:8px; cursor:pointer; }
 
-#topBar{
-position:absolute;
-top:0;
-left:0;
-right:0;
-height:40px;
-background:rgba(0,0,0,0.6);
-display:flex;
-justify-content:flex-end;
-align-items:center;
-padding-right:10px;
-opacity:0;
-transition:opacity .2s;
-}
-
-#viewer:hover #topBar{
-opacity:1;
+/* responsive tweaks */
+@media (max-width:720px) {
+  #controls { gap:8px; padding:10px; }
+  .row { min-width:140px; }
+  select { min-width:140px; font-size:14px; }
+  .actions { min-width:unset; gap:6px; }
+  #viewer { height:calc(100vh - 120px); }
 }
