@@ -1,89 +1,67 @@
-/* reset & base */
-* { box-sizing: border-box; }
-html,body,#app { height: 100%; margin: 0; background: #0b0b0b; color: #fff; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; }
-
-#controls {
-  display:flex;
-  gap:8px;
-  padding:10px;
-  background:#111;
-  align-items:center;
-  flex-wrap:wrap;
-  position:relative;
-  z-index:10;
+body{
+margin:0;
+background:#111;
+font-family:Arial;
+color:white;
 }
 
-#controls select, #controls button {
-  padding:8px 10px;
-  border-radius:6px;
-  border: none;
-  background:#1c1c1c;
-  color: white;
-  cursor: pointer;
-  font-size:14px;
+#controls{
+display:flex;
+gap:10px;
+padding:12px;
+background:#222;
+flex-wrap:wrap;
+align-items:center;
 }
 
-#controls select { min-width:140px; }
-
-#controls button:hover, #controls select:hover { background:#2a2a2a; }
-
-#status { margin-left:8px; font-size:13px; color:#bbb; }
-
-/* viewer area - fills remaining viewport height */
-#viewer {
-  position:relative;
-  width:100%;
-  height: calc(100vh - 58px); /* adjust assuming controls height ~58px */
-  overflow:hidden;
-  background:#000;
-  display:block;
+select{
+font-size:16px;
+padding:6px 8px;
+min-width:220px;
 }
 
-/* video will be sized/positioned with JS to ensure it always *covers* the viewer */
-#video {
-  position:absolute;
-  top:0;
-  left:0;
-  will-change: width, height, transform, left, top;
-  /* disable default object-fit behavior - we manually size/position for perfect cover */
-  object-fit: none;
-  transform-origin: center center;
-  background: #000;
-  touch-action: none;
+button{
+font-size:15px;
+padding:6px 10px;
+background:#444;
+color:white;
+border:none;
+cursor:pointer;
 }
 
-/* small top bar that appears when pointer is near top */
-#topBar {
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  height:44px;
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:8px;
-  padding:6px 10px;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.65), rgba(0,0,0,0.0));
-  opacity:0;
-  transition:opacity .18s ease;
-  pointer-events:none;
+button:hover{
+background:#666;
 }
 
-#viewer:hover #topBar, #viewer.touchingTop #topBar {
-  opacity:1;
-  pointer-events:auto;
+#viewer{
+position:relative;
+width:100%;
+height:calc(100vh - 60px);
+overflow:hidden;
+background:black;
 }
 
-#topBar button {
-  padding:6px 10px;
-  background:#222;
-  color:#fff;
-  border-radius:6px;
-  border: none;
+video{
+position:absolute;
+top:0;
+left:0;
 }
 
-@media (max-width:640px) {
-  #controls { padding:8px; gap:6px; }
-  #controls select, #controls button { font-size:13px; padding:7px 8px; }
+#topBar{
+position:absolute;
+top:0;
+left:0;
+right:0;
+height:40px;
+background:rgba(0,0,0,0.6);
+display:flex;
+justify-content:flex-end;
+align-items:center;
+padding-right:10px;
+opacity:0;
+transition:opacity .2s;
+}
+
+#viewer:hover #topBar{
+opacity:1;
 }
