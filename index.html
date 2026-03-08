@@ -1,59 +1,51 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>USB Capture Pro</title>
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>USB Capture — Auto Fill Viewer</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
+  <div id="app">
+    <div id="controls">
+      <select id="deviceSelect" title="Select video input"></select>
 
-<div id="controls">
+      <select id="resolutionSelect" title="Select capture resolution">
+        <option value="640x480">640 × 480</option>
+        <option value="1280x720" selected>1280 × 720</option>
+        <option value="1600x900">1600 × 900</option>
+        <option value="1920x1080">1920 × 1080</option>
+      </select>
 
-<select id="deviceSelect"></select>
+      <select id="fpsSelect" title="Select FPS">
+        <option value="30" selected>30 FPS</option>
+        <option value="60">60 FPS</option>
+      </select>
 
-<select id="resolutionSelect">
-<option value="640x480">640x480</option>
-<option value="1280x720">720p</option>
-<option value="1920x1080">1080p</option>
-<option value="2560x1440">1440p</option>
-</select>
+      <button id="startBtn">Start</button>
+      <button id="fullscreenBtn" title="F">Fullscreen</button>
+      <button id="mirrorBtn" title="M">Mirror</button>
+      <button id="pipBtn" title="P">PiP</button>
+      <button id="screenshotBtn" title="S">Screenshot</button>
+      <button id="resetViewBtn" title="R">Reset View</button>
 
-<select id="fpsSelect">
-<option value="30">30 FPS</option>
-<option value="60">60 FPS</option>
-</select>
+      <span id="status" aria-live="polite"></span>
+    </div>
 
-<select id="aspectSelect">
-<option value="contain">Original</option>
-<option value="cover">Fill</option>
-<option value="fill">Stretch</option>
-</select>
+    <div id="viewer">
+      <!-- video is absolutely positioned and manually sized so it always COVERS viewer area -->
+      <video id="video" autoplay playsinline muted></video>
 
-<button id="startBtn">Start</button>
-<button id="mirrorBtn">Mirror</button>
-<button id="zoomReset">Reset Zoom</button>
-<button id="screenshotBtn">Screenshot</button>
-<button id="pipBtn">PiP</button>
-<button id="fullscreenBtn">Fullscreen</button>
+      <div id="topBar">
+        <button id="exitFullscreen">Exit</button>
+      </div>
+    </div>
 
-<span id="fpsCounter"></span>
+    <!-- hidden canvas for screenshots -->
+    <canvas id="captureCanvas" style="display:none"></canvas>
+  </div>
 
-</div>
-
-<div id="viewer">
-
-<video id="video" autoplay playsinline></video>
-
-<div id="topOverlay">
-<button id="exitFullscreen">Exit Fullscreen</button>
-</div>
-
-</div>
-
-<canvas id="captureCanvas"></canvas>
-
-<script src="app.js"></script>
-
+  <script src="app.js"></script>
 </body>
 </html>
