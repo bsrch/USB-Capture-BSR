@@ -1,301 +1,255 @@
-// Perfect-fit viewer with display-mode dropdown (fill, fit, stretch, original, smart).
-// Copy this file in place of previous app.js.
+const deviceSelect=document.getElementById("deviceSelect");
+const resolutionSelect=document.getElementById("resolutionSelect");
+const displayMode=document.getElementById("displayMode");
+const zoomSlider=document.getElementById("zoomSlider");
 
-const deviceSelect = document.getElementById('deviceSelect');
-const resolutionSelect = document.getElementById('resolutionSelect');
-const fpsSelect = document.getElementById('fpsSelect');
-const displayMode = document.getElementById('displayMode');
+const startBtn=document.getElementById("startBtn");
+const resetBtn=document.getElementById("resetViewBtn");
+const fullscreenBtn=document.getElementById("fullscreenBtn");
+const screenshotBtn=document.getElementById("screenshotBtn");
 
-const startBtn = document.getElementById('startBtn');
-const fullscreenBtn = document.getElementById('fullscreenBtn');
-const mirrorBtn = document.getElementById('mirrorBtn');
-const pipBtn = document.getElementById('pipBtn');
-const screenshotBtn = document.getElementById('screenshotBtn');
-const resetViewBtn = document.getElementById('resetViewBtn');
-const exitFullscreenBtn = document.getElementById('exitFullscreen');
-const statusEl = document.getElementById('status');
+const viewer=document.getElementById("viewer");
+const video=document.getElementById("video");
+const canvas=document.getElementById("captureCanvas");
 
-const viewer = document.getElementById('viewer');
-const video = document.getElementById('video');
-const canvas = document.getElementById('captureCanvas');
+let stream=null;
 
-let currentStream = null;
-let mirrored = false;
-let manualScale = 1;
-let manualOffset = { x: 0, y: 0 };
+let scale=1;
+let offsetX=0;
+let offsetY=0;
 
-// small helper for status
-function setStatus(txt) { statusEl.textContent = txt || ''; }
+let dragging=false;
+let startX=0;
+let startY=0;
 
-// Ensure device labels visible (request minimal permission)
-async function ensurePermission() {
-  try {
-    await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-  } catch (e) {
-    // user might deny; enumerateDevices will still return deviceIds but labels may be hidden
-    console.debug('Permission for labels not granted:', e);
-  }
-}
+let pinchStartDist=null;
+let pinchStartScale=1;
 
-// Populate video input dropdown
-async function listDevices() {
-  await ensurePermission();
-  const devices = await navigator.mediaDevices.enumerateDevices();
-  const inputs = devices.filter(d => d.kind === 'videoinput');
-  deviceSelect.innerHTML = '';
-  if (inputs.length === 0) {
-    const o = document.createElement('option'); o.value = ''; o.text = 'No video input found'; deviceSelect.appendChild(o);
-    setStatus('No video inputs detected. Check connection and HDMI source.');
-    return;
-  }
-  inputs.forEach(d => {
-    const o = document.createElement('option');
-    o.value = d.deviceId;
-    o.text = d.label || `Camera ${d.deviceId.slice(0,6)}`;
-    deviceSelect.appendChild(o);
-  });
-  setStatus('');
-}
+async function listDevices(){
 
-// Start stream with chosen device/resolution/fps
-async function startStream() {
-  if (!deviceSelect.value) { setStatus('Select a device'); return; }
+const devices=await navigator.mediaDevices.enumerateDevices();
+const cams=devices.filter(d=>d.kind==="videoinput");
 
-  if (currentStream) currentStream.getTracks().forEach(t => t.stop());
+deviceSelect.innerHTML="";
 
-  const [w, h] = resolutionSelect.value.split('x').map(Number);
-  const fps = Number(fpsSelect.value || 30);
-
-  const constraints = {
-    video: {
-      deviceId: { exact: deviceSelect.value },
-      width: { ideal: w },
-      height: { ideal: h },
-      frameRate: { ideal: fps }
-    },
-    audio: false
-  };
-
-  try {
-    setStatus('Requesting stream…');
-    const stream = await navigator.mediaDevices.getUserMedia(constraints);
-    currentStream = stream;
-    video.srcObject = stream;
-    video.muted = true;
-    video.onloadedmetadata = () => {
-      video.play().catch(()=>{});
-      // reset manual adjustments and compute layout
-      manualScale = 1; manualOffset = { x: 0, y: 0 };
-      applyDisplayMode();
-      setStatus('Streaming');
-    };
-    const track = stream.getVideoTracks()[0];
-    track.onended = () => setStatus('Video track ended — check device/HDMI source.');
-  } catch (err) {
-    console.error(err);
-    setStatus('Failed to start stream: ' + (err && err.message ? err.message : err));
-  }
-}
-
-// Compute and apply layout according to selected display mode
-function applyDisplayMode() {
-  const mode = displayMode.value || 'smart';
-  // video intrinsic size (fallback to selected resolution if missing)
-  const vW = video.videoWidth || parseInt(resolutionSelect.value.split('x')[0]) || 1280;
-  const vH = video.videoHeight || parseInt(resolutionSelect.value.split('x')[1]) || 720;
-  const viewW = viewer.clientWidth;
-  const viewH = viewer.clientHeight;
-  if (!viewW || !viewH) return;
-
-  // helper that sizes video element to desired width/height and centers/pans
-  function setVideoSize(targetW, targetH) {
-    const finalW = Math.round(targetW * manualScale);
-    const finalH = Math.round(targetH * manualScale);
-    const left = Math.round((viewW - finalW) / 2 + manualOffset.x);
-    const top = Math.round((viewH - finalH) / 2 + manualOffset.y);
-    video.style.width = finalW + 'px';
-    video.style.height = finalH + 'px';
-    video.style.left = left + 'px';
-    video.style.top = top + 'px';
-    video.style.objectFit = 'none'; // we manage sizing manually (except stretch)
-    video.style.transform = mirrored ? 'scaleX(-1)' : 'none';
-  }
-
-  // choose behavior
-  if (mode === 'stretch') {
-    // stretch to exactly fit viewer (may distort)
-    video.style.left = '0px'; video.style.top = '0px';
-    video.style.width = viewW + 'px';
-    video.style.height = viewH + 'px';
-    video.style.objectFit = 'fill';
-    video.style.transform = mirrored ? 'scaleX(-1)' : 'none';
-    return;
-  }
-
-  if (mode === 'original') {
-    // native pixel size, centered
-    setVideoSize(vW, vH);
-    return;
-  }
-
-  const scaleCover = Math.max(viewW / vW, viewH / vH);   // fills viewer (crop)
-  const scaleContain = Math.min(viewW / vW, viewH / vH); // fits inside viewer (bars)
-
-  // Smart: choose the one with minimal letterboxing while trying to avoid excessive crop.
-  if (mode === 'smart') {
-    // If capture aspect is close to viewer aspect, use cover; otherwise prefer fit to avoid excessive crop.
-    const videoRatio = vW / vH;
-    const viewRatio = viewW / viewH;
-    const ratioDiff = Math.abs(videoRatio - viewRatio) / Math.max(videoRatio, viewRatio);
-    if (ratioDiff < 0.08) { // similar aspect -> cover
-      setVideoSize(vW * scaleCover, vH * scaleCover);
-    } else {
-      // prefer cover to avoid black bars by default; but if difference is large, prefer fit
-      if (ratioDiff < 0.2) setVideoSize(vW * scaleCover, vH * scaleCover);
-      else setVideoSize(vW * scaleContain, vH * scaleContain);
-    }
-    return;
-  }
-
-  if (mode === 'fill') {
-    setVideoSize(vW * scaleCover, vH * scaleCover);
-    return;
-  }
-
-  if (mode === 'fit') {
-    setVideoSize(vW * scaleContain, vH * scaleContain);
-    return;
-  }
-
-  // fallback - fill
-  setVideoSize(vW * scaleCover, vH * scaleCover);
-}
-
-// Reset view adjustments
-function resetView() {
-  manualScale = 1;
-  manualOffset = { x: 0, y: 0 };
-  applyDisplayMode();
-}
-
-// Mouse/touch interactions: wheel -> zoom, drag -> pan
-let dragging = false;
-let dragStart = null;
-
-viewer.addEventListener('wheel', (ev) => {
-  ev.preventDefault();
-  const delta = -ev.deltaY * 0.0015;
-  manualScale = Math.min(Math.max(0.5, manualScale + delta), 6);
-  applyDisplayMode();
-}, { passive: false });
-
-viewer.addEventListener('pointerdown', (ev) => {
-  dragging = true;
-  dragStart = { x: ev.clientX, y: ev.clientY, offX: manualOffset.x, offY: manualOffset.y };
-  viewer.setPointerCapture(ev.pointerId);
-});
-viewer.addEventListener('pointermove', (ev) => {
-  if (!dragging) return;
-  const dx = ev.clientX - dragStart.x;
-  const dy = ev.clientY - dragStart.y;
-  manualOffset.x = dragStart.offX + dx;
-  manualOffset.y = dragStart.offY + dy;
-  applyDisplayMode();
-});
-viewer.addEventListener('pointerup', (ev) => {
-  dragging = false;
-  try { viewer.releasePointerCapture(ev.pointerId); } catch(_) {}
+cams.forEach(d=>{
+const o=document.createElement("option");
+o.value=d.deviceId;
+o.text=d.label||"Camera";
+deviceSelect.appendChild(o);
 });
 
-// keyboard shortcuts
-document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'f' || ev.key === 'F') viewer.requestFullscreen().catch(()=>{});
-  else if (ev.key === 'Escape') { if (document.fullscreenElement) document.exitFullscreen().catch(()=>{}); }
-  else if (ev.key === 'm' || ev.key === 'M') { mirrored = !mirrored; applyDisplayMode(); }
-  else if (ev.key === 's' || ev.key === 'S') screenshot();
-  else if (ev.key === 'r' || ev.key === 'R') resetView();
-  else if (ev.key === '1') { displayMode.value = 'fill'; applyDisplayMode(); }
-  else if (ev.key === '2') { displayMode.value = 'fit'; applyDisplayMode(); }
-  else if (ev.key === '3') { displayMode.value = 'stretch'; applyDisplayMode(); }
-  else if (ev.key === '4') { displayMode.value = 'original'; applyDisplayMode(); }
-  else if (ev.key === '5') { displayMode.value = 'smart'; applyDisplayMode(); }
-});
-
-// Mirror toggle
-mirrorBtn.onclick = () => { mirrored = !mirrored; applyDisplayMode(); };
-
-// Fullscreen & exit
-fullscreenBtn.onclick = () => viewer.requestFullscreen().catch(()=>{});
-exitFullscreenBtn.onclick = () => document.exitFullscreen().catch(()=>{});
-
-// PiP - may fail on some browsers
-pipBtn.onclick = () => { try { video.requestPictureInPicture(); } catch(e) { console.debug(e); } };
-
-// Screenshot: capture currently visible viewer rectangle (cropped)
-function screenshot() {
-  // ensure we have video frame
-  const vW = video.videoWidth, vH = video.videoHeight;
-  if (!vW || !vH) { setStatus('No video frame to capture'); return; }
-
-  const vidRect = video.getBoundingClientRect();
-  const viewRect = viewer.getBoundingClientRect();
-
-  // calculate mapping from displayed video to source pixels
-  const dispW = parseFloat(video.style.width);
-  const dispH = parseFloat(video.style.height);
-  const ratioX = vW / dispW;
-  const ratioY = vH / dispH;
-
-  // visible area relative to video
-  const sx = Math.max(0, (viewRect.left - vidRect.left) * ratioX);
-  const sy = Math.max(0, (viewRect.top - vidRect.top) * ratioY);
-  const sw = Math.max(1, Math.min(vW, viewRect.width * ratioX));
-  const sh = Math.max(1, Math.min(vH, viewRect.height * ratioY));
-
-  // draw
-  canvas.width = Math.round(viewRect.width);
-  canvas.height = Math.round(viewRect.height);
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
-
-  canvas.toBlob(blob => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `capture-${Date.now()}.png`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 2000);
-  }, 'image/png');
-
-  setStatus('Screenshot saved');
 }
 
-// handle display mode change
-displayMode.addEventListener('change', applyDisplayMode);
+async function startStream(){
 
-// when video metadata/resolution updates
-video.addEventListener('loadedmetadata', applyDisplayMode);
-video.addEventListener('resize', applyDisplayMode);
+if(stream)stream.getTracks().forEach(t=>t.stop());
 
-// window resize => recompute
-window.addEventListener('resize', applyDisplayMode);
+const [w,h]=resolutionSelect.value.split("x").map(Number);
 
-// device hotplug
-navigator.mediaDevices.addEventListener('devicechange', async () => {
-  const prev = deviceSelect.value;
-  await listDevices();
-  if (Array.from(deviceSelect.options).some(o => o.value === prev)) deviceSelect.value = prev;
+const constraints={
+video:{
+deviceId:{exact:deviceSelect.value},
+width:{ideal:w},
+height:{ideal:h}
+}
+};
+
+stream=await navigator.mediaDevices.getUserMedia(constraints);
+
+video.srcObject=stream;
+
+video.onloadedmetadata=()=>{
+video.play();
+applyDisplayMode();
+};
+
+}
+
+function applyDisplayMode(){
+
+const vW=video.videoWidth;
+const vH=video.videoHeight;
+
+if(!vW)return;
+
+const viewW=viewer.clientWidth;
+const viewH=viewer.clientHeight;
+
+let targetW=vW;
+let targetH=vH;
+
+const cover=Math.max(viewW/vW,viewH/vH);
+const contain=Math.min(viewW/vW,viewH/vH);
+
+switch(displayMode.value){
+
+case "fit":
+targetW=vW*contain;
+targetH=vH*contain;
+break;
+
+case "fill":
+targetW=vW*cover;
+targetH=vH*cover;
+break;
+
+case "stretch":
+targetW=viewW;
+targetH=viewH;
+break;
+
+case "original":
+targetW=vW;
+targetH=vH;
+break;
+
+default:
+targetW=vW*contain;
+targetH=vH*contain;
+
+}
+
+targetW*=scale;
+targetH*=scale;
+
+video.style.width=targetW+"px";
+video.style.height=targetH+"px";
+
+video.style.left=(viewW-targetW)/2+offsetX+"px";
+video.style.top=(viewH-targetH)/2+offsetY+"px";
+
+}
+
+zoomSlider.addEventListener("input",()=>{
+
+scale=parseFloat(zoomSlider.value);
+applyDisplayMode();
+
 });
 
-// wire buttons
-startBtn.onclick = startStream;
-screenshotBtn.onclick = screenshot;
-resetViewBtn.onclick = resetView;
+resetBtn.onclick=()=>{
 
-// init
-(async function init() {
-  setStatus('Initializing…');
-  await listDevices();
-  setStatus('');
-})();
+scale=1;
+offsetX=0;
+offsetY=0;
+
+zoomSlider.value=1;
+
+applyDisplayMode();
+
+};
+
+fullscreenBtn.onclick=()=>viewer.requestFullscreen();
+
+screenshotBtn.onclick=()=>{
+
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
+
+const ctx=canvas.getContext("2d");
+
+ctx.drawImage(video,0,0);
+
+canvas.toBlob(blob=>{
+
+const url=URL.createObjectURL(blob);
+
+const a=document.createElement("a");
+a.href=url;
+a.download="capture.png";
+a.click();
+
+});
+
+};
+
+viewer.addEventListener("mousedown",e=>{
+
+dragging=true;
+startX=e.clientX;
+startY=e.clientY;
+
+});
+
+window.addEventListener("mouseup",()=>dragging=false);
+
+window.addEventListener("mousemove",e=>{
+
+if(!dragging)return;
+
+offsetX+=e.clientX-startX;
+offsetY+=e.clientY-startY;
+
+startX=e.clientX;
+startY=e.clientY;
+
+applyDisplayMode();
+
+});
+
+viewer.addEventListener("touchstart",e=>{
+
+if(e.touches.length===1){
+
+dragging=true;
+startX=e.touches[0].clientX;
+startY=e.touches[0].clientY;
+
+}
+
+if(e.touches.length===2){
+
+const dx=e.touches[0].clientX-e.touches[1].clientX;
+const dy=e.touches[0].clientY-e.touches[1].clientY;
+
+pinchStartDist=Math.sqrt(dx*dx+dy*dy);
+pinchStartScale=scale;
+
+}
+
+},{passive:false});
+
+viewer.addEventListener("touchmove",e=>{
+
+if(e.touches.length===1&&dragging){
+
+const x=e.touches[0].clientX;
+const y=e.touches[0].clientY;
+
+offsetX+=x-startX;
+offsetY+=y-startY;
+
+startX=x;
+startY=y;
+
+applyDisplayMode();
+
+}
+
+if(e.touches.length===2){
+
+const dx=e.touches[0].clientX-e.touches[1].clientX;
+const dy=e.touches[0].clientY-e.touches[1].clientY;
+
+const dist=Math.sqrt(dx*dx+dy*dy);
+
+scale=pinchStartScale*(dist/pinchStartDist);
+
+scale=Math.min(Math.max(scale,0.5),2);
+
+zoomSlider.value=scale;
+
+applyDisplayMode();
+
+}
+
+},{passive:false});
+
+window.addEventListener("resize",applyDisplayMode);
+
+startBtn.onclick=startStream;
+
+navigator.mediaDevices.addEventListener("devicechange",listDevices);
+
+listDevices();
