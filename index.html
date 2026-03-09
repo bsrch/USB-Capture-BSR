@@ -1,68 +1,73 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>USB Capture — Perfect Fit Viewer</title>
-  <link rel="stylesheet" href="style.css" />
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<!-- Prevent Safari caching -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<title>Capture Viewer</title>
+
+<link rel="stylesheet" href="style.css">
+
 </head>
+
 <body>
-  <div id="app">
-    <header id="controls">
-      <div class="row">
-        <label for="deviceSelect">Video device</label>
-        <select id="deviceSelect" aria-label="Video device"></select>
-      </div>
 
-      <div class="row">
-        <label for="resolutionSelect">Resolution</label>
-        <select id="resolutionSelect" aria-label="Resolution">
-          <option value="640x480">640 × 480</option>
-          <option value="1280x720">1280 × 720</option>
-          <option value="1600x900" selected>1600 × 900</option>
-          <option value="1920x1080">1920 × 1080</option>
-        </select>
-      </div>
+<header id="controls">
 
-      <div class="row">
-        <label for="fpsSelect">FPS</label>
-        <select id="fpsSelect" aria-label="Frames per second">
-          <option value="30" selected>30 FPS</option>
-          <option value="60">60 FPS</option>
-        </select>
-      </div>
+<div class="row">
+<label>Device</label>
+<select id="deviceSelect"></select>
+</div>
 
-      <div class="row">
-        <label for="displayMode">Display mode</label>
-        <select id="displayMode" aria-label="Display mode">
-          <option value="smart" selected>Smart (auto)</option>
-          <option value="fill">Fill (cover, crop)</option>
-          <option value="fit">Fit (contain, bars possible)</option>
-          <option value="stretch">Stretch (distort)</option>
-          <option value="original">Original (native size)</option>
-        </select>
-      </div>
+<div class="row">
+<label>Resolution</label>
+<select id="resolutionSelect">
+<option value="640x480">640×480</option>
+<option value="1280x720">1280×720</option>
+<option value="1600x900" selected>1600×900</option>
+<option value="1920x1080">1920×1080</option>
+</select>
+</div>
 
-      <div class="row actions">
-        <button id="startBtn">Start</button>
-        <button id="fullscreenBtn" title="F">Fullscreen</button>
-        <button id="mirrorBtn" title="M">Mirror</button>
-        <button id="pipBtn" title="P">PiP</button>
-        <button id="screenshotBtn" title="S">Screenshot</button>
-        <button id="resetViewBtn" title="R">Reset</button>
-      </div>
+<div class="row">
+<label>Display Mode</label>
+<select id="displayMode">
+<option value="smart">Smart</option>
+<option value="fit">Fit</option>
+<option value="fill">Fill</option>
+<option value="stretch">Stretch</option>
+<option value="original">Original</option>
+</select>
+</div>
 
-      <div class="row status" id="status" aria-live="polite"></div>
-    </header>
+<div class="row">
+<label>Zoom</label>
+<input id="zoomSlider" type="range" min="0.5" max="2" step="0.01" value="1">
+</div>
 
-    <main id="viewer">
-      <video id="video" autoplay playsinline muted></video>
-      <div id="topBar"><button id="exitFullscreen">Exit</button></div>
-    </main>
+<div class="row actions">
+<button id="startBtn">Start</button>
+<button id="resetViewBtn">Reset</button>
+<button id="fullscreenBtn">Fullscreen</button>
+<button id="screenshotBtn">Screenshot</button>
+</div>
 
-    <canvas id="captureCanvas" style="display:none"></canvas>
-  </div>
+</header>
 
-  <script src="app.js"></script>
+<main id="viewer">
+<video id="video" autoplay playsinline muted></video>
+</main>
+
+<canvas id="captureCanvas"></canvas>
+
+<!-- Versioned JS to force refresh -->
+<script src="app.js?v=1"></script>
+
 </body>
 </html>
