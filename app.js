@@ -25,7 +25,14 @@ let startY=0;
 let pinchStartDist=null;
 let pinchStartScale=1;
 
+
+/* ---------- DEVICE LIST ---------- */
+
 async function listDevices(){
+
+try{
+await navigator.mediaDevices.getUserMedia({video:true});
+}catch(e){}
 
 const devices=await navigator.mediaDevices.enumerateDevices();
 const cams=devices.filter(d=>d.kind==="videoinput");
@@ -40,6 +47,9 @@ deviceSelect.appendChild(o);
 });
 
 }
+
+
+/* ---------- START STREAM ---------- */
 
 async function startStream(){
 
@@ -65,6 +75,9 @@ applyDisplayMode();
 };
 
 }
+
+
+/* ---------- DISPLAY MODE ---------- */
 
 function applyDisplayMode(){
 
@@ -106,7 +119,6 @@ break;
 
 default:
 targetW=vW*contain;
-targetH=vH*contain;
 
 }
 
@@ -121,12 +133,18 @@ video.style.top=(viewH-targetH)/2+offsetY+"px";
 
 }
 
+
+/* ---------- ZOOM SLIDER ---------- */
+
 zoomSlider.addEventListener("input",()=>{
 
 scale=parseFloat(zoomSlider.value);
 applyDisplayMode();
 
 });
+
+
+/* ---------- RESET ---------- */
 
 resetBtn.onclick=()=>{
 
@@ -140,7 +158,13 @@ applyDisplayMode();
 
 };
 
+
+/* ---------- FULLSCREEN ---------- */
+
 fullscreenBtn.onclick=()=>viewer.requestFullscreen();
+
+
+/* ---------- SCREENSHOT ---------- */
 
 screenshotBtn.onclick=()=>{
 
@@ -163,6 +187,9 @@ a.click();
 });
 
 };
+
+
+/* ---------- MOUSE DRAG ---------- */
 
 viewer.addEventListener("mousedown",e=>{
 
@@ -188,6 +215,9 @@ applyDisplayMode();
 
 });
 
+
+/* ---------- TOUCH ---------- */
+
 viewer.addEventListener("touchstart",e=>{
 
 if(e.touches.length===1){
@@ -209,6 +239,7 @@ pinchStartScale=scale;
 }
 
 },{passive:false});
+
 
 viewer.addEventListener("touchmove",e=>{
 
@@ -246,7 +277,13 @@ applyDisplayMode();
 
 },{passive:false});
 
+
+/* ---------- RESIZE ---------- */
+
 window.addEventListener("resize",applyDisplayMode);
+
+
+/* ---------- INIT ---------- */
 
 startBtn.onclick=startStream;
 
